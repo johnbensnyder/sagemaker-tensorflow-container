@@ -187,7 +187,7 @@ RUN ${PIP} install --extra-index-url https://developer.download.nvidia.com/compu
             nvidia-dali==$DALI_VERSION && \
     ${PIP} install --extra-index-url https://developer.download.nvidia.com/compute/redist/cuda/10.0 \
             nvidia-dali-tf-plugin==$DALI_VERSION
-            
+
 ENV TZ=America/Los_Angeles
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
@@ -204,6 +204,30 @@ RUN ${PIP} install tensorflow_addons \
                 addict \
                 terminaltables \
                 numba && \
-    pip install pycocotools
+    ${PIP} install pycocotools
 
-CMD ["bin/bash"]
+##########################################
+# Additional components for notebook use
+##########################################
+
+# Nodejs for jupyter lab extensions
+
+RUN curl -sL https://deb.nodesource.com/setup_13.x  | bash -
+RUN apt-get -y install nodejs
+RUN npm install
+
+RUN ${PIP} install jupyter \
+                jupyterlab==1.2.0 \
+                tensorflow_addons \
+                ipywidgets \
+                matplotlib \
+                seaborn \
+                jupyterlab-nvdashboard \
+                jupyter-tensorboard && \
+    jupyter labextension install @jupyter-widgets/jupyterlab-manager \
+                                 jupyterlab-nvdashboard jupyterlab_tensorboard
+
+RUN mkdir /workspace
+WORKDIR /workspace
+                                 
+CMD nohup jupyter lab --allow-root --ip=0.0.0.0 --no-browser > notebook.log
